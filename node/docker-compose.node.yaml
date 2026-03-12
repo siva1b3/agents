@@ -8,5 +8,7 @@ services:
     container_name: base_nodejs_service_container
     tty: true
     stdin_open: true
+    command: >
+      bash -c "cd / && git clone https://github.com/siva1b3/agents.git && tail -f /dev/null"
     networks:
       - agent_app_global_network
