@@ -1,0 +1,10 @@
+networks:
+  agent_app_global_network:
+    external: true
+
+services:
+  base_nodejs_service:
+    image: node:25.3
+    container_name: base_nodejs_service_container
+    tty: true
+    stdin_open: true
