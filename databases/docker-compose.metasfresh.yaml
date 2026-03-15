@@ -1,0 +1,39 @@
+networks:
+  agent_app_global_network:
+    name: agent_app_global_network
+    driver: bridge
+
+volumes:
+  metasfresh_postgres_data:
+    name: metasfresh_postgres_data
+
+services:
+  metasfresh_postgres_service:
+    image: metasfresh/metasfresh-db:5.175-mergify-merge-queue-3e39d29329.31887-compat
+    container_name: metasfresh_postgres_service_container
+    ports:
+      - "5433:5432"
+    volumes:
+      - metasfresh_postgres_data:/var/lib/postgresql/data
+    networks:
+      - agent_app_global_network
+    restart: no
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U metasfresh -d metasfresh" ]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+
+  metasfresh_pgweb_service:
+    image: sosedoff/pgweb:0.17.0
+    container_name: metasfresh_pgweb_service_container
+    environment:
+      - PGWEB_DATABASE_URL=postgres://metasfresh:metasfresh@metasfresh_postgres_service_container:5432/metasfresh?sslmode=disable
+    ports:
+      - "8081:8081"
+    networks:
+      - agent_app_global_network
+    depends_on:
+      metasfresh_postgres_service:
+        condition: service_healthy
+    restart: no
