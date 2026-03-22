@@ -1,0 +1,12 @@
+networks:
+  agent_app_global_network:
+    name: agent_app_global_network
+    driver: bridge
+
+services:
+  agent_app_network_keeper:
+    image: nginx:alpine
+    container_name: agent_app_network_keeper
+    networks:
+      - agent_app_global_network
+    command: [ "tail", "-f", "/dev/null" ]

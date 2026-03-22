@@ -1,0 +1,57 @@
+networks:
+  agent_app_global_network:
+    name: agent_app_global_network
+    driver: bridge
+
+volumes:
+  agent_app_postgres_data:
+    name: agent_app_postgres_data
+
+services:
+  agent_app_postgres_service:
+    image: postgres:18-bookworm
+    container_name: agent_app_postgres_service_container
+    environment:
+      POSTGRES_USER: admin_user
+      POSTGRES_PASSWORD: admin_password
+      POSTGRES_DB: agent_app_db
+    volumes:
+      - agent_app_postgres_data:/var/lib/postgresql
+      - ./datalayer/postgres:/docker-entrypoint-initdb.d
+    networks:
+      - agent_app_global_network
+    ports:
+      - "5432:5432"
+    restart: no
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U admin_user -d agent_app_db" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  agent_app_pgweb_service:
+    image: sosedoff/pgweb:0.17.0
+    container_name: agent_app_pgweb_service_container
+    environment:
+      - PGWEB_DATABASE_URL=postgres://admin_user:admin_password@agent_app_postgres_service_container:5432/agent_app_db?sslmode=disable
+    ports:
+      - "8081:8081"
+    networks:
+      - agent_app_global_network
+    depends_on:
+      agent_app_postgres_service:
+        condition: service_healthy
+    restart: no
+
+  base_nodejs_service:
+    image: node:25.3
+    container_name: base_nodejs_service_container
+    tty: true
+    stdin_open: true
+    command: >
+      bash -c "cd / && git clone https://github.com/siva1b3/agents.git && tail -f /dev/null"
+    networks:
+      - agent_app_global_network
+    depends_on:
+      - agent_app_postgres_service
+      - agent_app_pgweb_service

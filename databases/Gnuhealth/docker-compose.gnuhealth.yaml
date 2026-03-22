@@ -1,0 +1,44 @@
+networks:
+  gnuhealth_app_global_network:
+    name: gnuhealth_app_global_network
+    driver: bridge
+
+volumes:
+  gnuhealth_app_postgres_data:
+    name: gnuhealth_app_postgres_data
+
+services:
+  gnuhealth_app_postgres_service:
+    image: postgres:18-bookworm
+    container_name: gnuhealth_app_postgres_service_container
+    environment:
+      POSTGRES_USER: admin_user
+      POSTGRES_PASSWORD: admin_password
+      POSTGRES_DB: gnuhealth_app_db
+    volumes:
+      - gnuhealth_app_postgres_data:/var/lib/postgresql
+      - ./postgres:/docker-entrypoint-initdb.d
+    networks:
+      - gnuhealth_app_global_network
+    ports:
+      - "5432:5432"
+    restart: no
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U admin_user -d gnuhealth_app_db" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  gnuhealth_app_pgweb_service:
+    image: sosedoff/pgweb:0.17.0
+    container_name: gnuhealth_app_pgweb_service_container
+    environment:
+      - PGWEB_DATABASE_URL=postgres://admin_user:admin_password@gnuhealth_app_postgres_service_container:5432/gnuhealth_app_db?sslmode=disable
+    ports:
+      - "8081:8081"
+    networks:
+      - gnuhealth_app_global_network
+    depends_on:
+      gnuhealth_app_postgres_service:
+        condition: service_healthy
+    restart: no
