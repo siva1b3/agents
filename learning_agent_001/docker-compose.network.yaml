@@ -1,0 +1,14 @@
+name: learning_app_global_network_proxy
+
+networks:
+  learning_app_global_network:
+    name: learning_app_global_network
+    driver: bridge
+
+services:
+  learning_app_network_keeper_service:
+    image: nginx:alpine
+    container_name: learning_app_network_keeper_container
+    networks:
+      - learning_app_global_network
+    command: [ "tail", "-f", "/dev/null" ]
