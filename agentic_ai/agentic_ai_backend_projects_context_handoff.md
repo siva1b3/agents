@@ -471,3 +471,18 @@ The tracks are conceptual groupings, but the build order crosses tracks so compl
 
 - Start with **Project 1: Codebase Navigator Agent**, following the recommended implementation order.
 - Convert Project 1 into an implementation-ready specification covering its small Express fixture, generated investigation questions, read-only tools and evidence-based success checks.
+
+
+## requiremnets
+
+- Focus only on learning agentic-AI backend concepts.
+- Do not build a full supporting application just to generate inputs.
+- Use sample, mocked or automatically generated data.
+- Keep the frontend to one basic page or CLI.
+- Avoid authentication, deployment, Kubernetes and production concerns.
+- Avoid unnecessary domain logic.
+- Add only one major new concept at a time.
+- Each project must run locally using a simple command or Docker Compose.
+- Each project must demonstrate a real-world use case without requiring real-world infrastructure.
+- Supporting systems should be simulated when building them does not teach the current concept.
+- The project should be understandable end-to-end by one learner.
