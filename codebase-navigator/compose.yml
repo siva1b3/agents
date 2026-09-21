@@ -1,0 +1,14 @@
+name: codebase-navigator
+services:
+  node:
+    build: .
+    working_dir: /app
+    command: ["tail", "-f", "/dev/null"]
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - .:/app
+      - node_modules:/app/node_modules
+    init: true
+volumes:
+  node_modules:
