@@ -4,7 +4,9 @@
   "description": "Express practice repository for the Codebase Navigator agent",
   "private": true,
   "scripts": {
-    "test": "node --test",
+    "test": "node --test test/*.test.js",
+    "check": "node scripts/check-syntax.js",
+    "demo": "node scripts/run-api-demo.js",
     "start": "node src/server.js",
     "dev": "node --watch src/server.js"
   },

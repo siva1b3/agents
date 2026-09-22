@@ -4,6 +4,14 @@ services:
     build: .
     working_dir: /app
     command: ["tail", "-f", "/dev/null"]
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      SEED_DEMO_DATA: ${SEED_DEMO_DATA:-true}
+      SESSION_LIFETIME_SECONDS: ${SESSION_LIFETIME_SECONDS:-3600}
+      REQUEST_LIMIT_PER_MINUTE: ${REQUEST_LIMIT_PER_MINUTE:-120}
+      AUTHENTICATION_LIMIT_PER_MINUTE: ${AUTHENTICATION_LIMIT_PER_MINUTE:-10}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:3000}
     ports:
       - "127.0.0.1:3000:3000"
     volumes:
