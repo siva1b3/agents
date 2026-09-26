@@ -21,6 +21,8 @@ gh auth status
 
 git clone https://github.com/siva1b3/agents
 
+git switch a-001-codebase-navigator-agent
+
 cd /agents
 git config user.name "siva"
 git config user.email "siva@openai.com"
