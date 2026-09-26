@@ -1,9 +1,9 @@
 name: siva_test
 
 services:
-  dev-server:
-    build: .
-    container_name: dev-server
+  ubuntu-dev:
+    image: ubuntu:24.04
+    container_name: ubuntu-dev
 
     ports:
       - "127.0.0.1:2222:22"
@@ -16,18 +16,24 @@ services:
       - "5005:5005"
 
     volumes:
-      - ./workspace:/home/dev/workspace
-      - "C:/Users/siva1/.ssh/docker-dev-key.pub:/tmp/docker-dev-key.pub:ro"
+      - "C:/Users/siva1/.ssh/chatgpt_ubuntu_dev.pub:/tmp/chatgpt_ubuntu_dev.pub:ro"
 
     command:
       - /bin/bash
-      - -c
+      - -ec
       - |
-        mkdir -p /home/dev/.ssh
-        cp /tmp/docker-dev-key.pub /home/dev/.ssh/authorized_keys
-        chown -R dev:dev /home/dev/.ssh
-        chmod 700 /home/dev/.ssh
-        chmod 600 /home/dev/.ssh/authorized_keys
+        if ! command -v sshd >/dev/null; then
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            openssh-server git ca-certificates curl
+        fi
+        mkdir -p /root/.ssh /run/sshd
+        chmod 700 /root/.ssh
+        cp /tmp/chatgpt_ubuntu_dev.pub /root/.ssh/authorized_keys
+        chmod 600 /root/.ssh/authorized_keys
+        printf '%s\n' 'PermitRootLogin prohibit-password' 'PubkeyAuthentication yes' \
+          > /etc/ssh/sshd_config.d/99-dev.conf
+        ssh-keygen -A
         exec /usr/sbin/sshd -D -e
 
     restart: unless-stopped
