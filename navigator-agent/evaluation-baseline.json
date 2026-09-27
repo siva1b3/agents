@@ -1,0 +1,545 @@
+[
+  {
+    "question_number": "1",
+    "question": "Find where request validation happens and explain how invalid requests are rejected.",
+    "answer": "- Validation is implemented in the validate-request middleware and applied in routes. The middleware is defined in src/middleware/validate-request.js and uses a schema to parse the request part, e.g., body or params. If parsing fails, it throws an ApplicationError with 400 and a details payload. Evidence: src/middleware/validate-request.js:3-9, 11-13. These lines show safeParse, 400 error creation, and storing validated data on request.validated. Also routes wire it up (see product routes). Evidence: src/routes/product-routes.js:11, 12, 14-20. \n\n- The routes apply the validator to various endpoints, ensuring inputs are validated before controllers run. For example, product routes use validateRequest(productQuerySchema, 'query'), validateRequest(identifierParametersSchema, 'params'), etc. Evidence: src/routes/product-routes.js:11-20.\n\n- Invalid input results in an error thrown by the validator. The thrown error is an instance of ApplicationError with statusCode 400 and a validation-specific code/message, plus a details array describing issues. Evidence: src/middleware/validate-request.js:7-9.\n\n- The error is handled by the centralized error handling middleware registered in the application, which formats and returns a JSON error response. Evidence that error handling is wired: src/app.js lines 76-78 show the error route not-found and error handler being added; in server startup, createErrorHandler(logger) is used to handle errors. Evidence: src/app.js:76-78.\n\n- The ApplicationError class defines the structure used for validation errors, including statusCode, code, message, and optional details. This is the same type used by the validator. Evidence: src/errors/application-error.js:1-8.\n\n- The HTTP response for a validation failure is a JSON object containing an error block with code, message, and optional details, plus the requestId. Evidence: src/middleware/error-handler.js:27-33. The 400 status is set on applicationError by the validator and preserved through the error handler. Evidence: src/middleware/validate-request.js:7-9, and src/middleware/error-handler.js:27-33.",
+    "trace": [
+      {
+        "name": "list_files",
+        "arguments": {},
+        "output": {
+          "result": [
+            ".dockerignore",
+            ".gitignore",
+            "Dockerfile",
+            "README.md",
+            "compose.yml",
+            "docs/",
+            "docs/api-reference.md",
+            "docs/architecture.md",
+            "package-lock.json",
+            "package.json",
+            "questions.md",
+            "scripts/",
+            "scripts/check-syntax.js",
+            "scripts/run-api-demo.js",
+            "src/",
+            "src/app.js",
+            "src/configuration/",
+            "src/configuration/environment.js",
+            "src/controllers/",
+            "src/controllers/administration-controller.js",
+            "src/controllers/authentication-controller.js",
+            "src/controllers/order-controller.js",
+            "src/controllers/product-controller.js",
+            "src/controllers/user-controller.js",
+            "src/data/",
+            "src/data/seed-demonstration-data.js",
+            "src/errors/",
+            "src/errors/application-error.js",
+            "src/middleware/",
+            "src/middleware/authenticate-request.js",
+            "src/middleware/error-handler.js",
+            "src/middleware/http-security.js",
+            "src/middleware/rate-limit.js",
+            "src/middleware/request-context.js",
+            "src/middleware/require-idempotency-key.js",
+            "src/middleware/require-permission.js",
+            "src/middleware/validate-request.js",
+            "src/observability/",
+            "src/observability/structured-logger.js",
+            "src/repositories/",
+            "src/repositories/memory-repositories.js",
+            "src/routes/",
+            "src/routes/administration-routes.js",
+            "src/routes/authentication-routes.js",
+            "src/routes/order-routes.js",
+            "src/routes/product-routes.js",
+            "src/routes/user-routes.js",
+            "src/schemas/",
+            "src/schemas/request-schemas.js",
+            "src/security/",
+            "src/security/password-hasher.js",
+            "src/security/role-permissions.js",
+            "src/security/session-token.js",
+            "src/server.js",
+            "src/services/",
+            "src/services/audit-service.js",
+            "src/services/authentication-service.js",
+            "src/services/order-service.js",
+            "src/services/pagination.js",
+            "src/services/product-service.js",
+            "src/services/user-service.js",
+            "test/",
+            "test/authentication.test.js",
+            "test/catalog-and-permissions.test.js",
+            "test/helpers/",
+            "test/helpers/test-application.js",
+            "test/http-infrastructure.test.js",
+            "test/orders.test.js",
+            "test/server-lifecycle.test.js"
+          ]
+        }
+      },
+      {
+        "name": "search_code",
+        "arguments": {
+          "query": "validate",
+          "max_results": 50
+        },
+        "output": {
+          "result": "docs/architecture.md:48: Order creation first reads and validates every requested product.\ndocs/architecture.md:72: Validated input is stored in `request.validated` rather than replacing the\nquestions.md:21: 10. How does a password change invalidate old sessions?\nquestions.md:37: 23. Where are stock adjustments validated and audited?\nquestions.md:64: 44. How are environment values validated before startup?\nsrc/controllers/administration-controller.js:6:       response.json(paginateRecords(userService.listUsers(), request.validated.query));\nsrc/controllers/administration-controller.js:9:       response.json(paginateRecords(auditService.listEvents(), request.validated.query));\nsrc/controllers/authentication-controller.js:4:       const user = await userService.registerUser(request.validated.body, request.requestId);\nsrc/controllers/authentication-controller.js:8:       const session = await authenticationService.login(request.validated.body, request.requestId);\nsrc/controllers/order-controller.js:5:         request.authenticatedUser, request.validated.body, request.idempotencyKey, request.requestId,\nsrc/controllers/order-controller.js:11:       response.json(orderService.listOrders(request.authenticatedUser, request.validated.query));\nsrc/controllers/order-controller.js:15:         request.validated.params.identifier, request.authenticatedUser,\nsrc/controllers/order-controller.js:20:         request.validated.params.identifier, request.authenticatedUser, request.requestId,\nsrc/controllers/order-controller.js:25:         request.validated.params.identifier, request.validated.body.status,\nsrc/controllers/product-controller.js:4:       response.json(productService.listProducts(request.validated.query));\nsrc/controllers/product-controller.js:7:       response.json({ data: productService.requireProduct(request.validated.params.identifier) });\nsrc/controllers/product-controller.js:11:         request.validated.body, request.authenticatedUser.id, request.requestId,\nsrc/controllers/product-controller.js:17:         request.validated.params.identifier, request.validated.body,\nsrc/controllers/product-controller.js:23:         request.validated.params.identifier, request.validated.body,\nsrc/controllers/product-controller.js:29:         request.validated.params.identifier, request.validated.body.expectedVersion,\nsrc/controllers/user-controller.js:8:         request.authenticatedUser.id, request.validated.body, request.requestId,\nsrc/controllers/user-controller.js:12:       await userService.changePassword(request.authenticatedUser.id, request.validated.body, request.requestId);\nsrc/controllers/user-controller.js:17:         request.authenticatedUser.id, request.validated.body.password, request.requestId,\nsrc/middleware/validate-request.js:3: export function validateRequest(schema, source = 'body') {\nsrc/middleware/validate-request.js:4:   return function validateSelectedRequestPart(request, response, next) {\nsrc/middleware/validate-request.js:10:     // Express 5 query is a getter; validated/coerced input has its own namespace.\nsrc/middleware/validate-request.js:11:     request.validated ??= {};\nsrc/middleware/validate-request.js:12:     request.validated[source] = result.data;\nsrc/routes/administration-routes.js:2: import { validateRequest } from '../middleware/validate-request.js';\nsrc/routes/administration-routes.js:9:   router.get('/users', requirePermission('users:read-all'), validateRequest(paginationSchema, 'query'), controller.listUsers);\nsrc/routes/administration-routes.js:10:   router.get('/audit-events', requirePermission('audit:read'), validateRequest(paginationSchema, 'query'), controller.listAuditEvents);\nsrc/routes/authentication-routes.js:2: import { validateRequest } from '../middleware/validate-request.js';\nsrc/routes/authentication-routes.js:7:   router.post('/register', authenticationRateLimiter, validateRequest(registrationSchema), controller.register);\nsrc/routes/authentication-routes.js:8:   router.post('/login', authenticationRateLimiter, validateRequest(loginSchema), controller.login);\nsrc/routes/order-routes.js:2: import { validateRequest } from '../middleware/validate-request.js';\nsrc/routes/order-routes.js:12:   router.get('/', requirePermission('orders:read-own'), validateRequest(orderQuerySchema, 'query'), controller.listOrders);\nsrc/routes/order-routes.js:14:     validateRequest(orderCreationSchema), controller.createOrder);\nsrc/routes/order-routes.js:16:     validateRequest(identifierParametersSchema, 'params'), controller.getOrder);\nsrc/routes/order-routes.js:18:     validateRequest(identifierParametersSchema, 'params'), controller.cancelOrder);\nsrc/routes/order-routes.js:20:     validateRequest(identifierParametersSchema, 'params'), validateRequest(orderStatusSchema), controller.updateOrderStatus);\nsrc/routes/product-routes.js:2: import { validateRequest } from '../middleware/validate-request.js';\nsrc/routes/product-routes.js:11:   router.get('/', validateRequest(productQuerySchema, 'query'), controller.listProducts);\nsrc/routes/product-routes.js:12:   router.get('/:identifier', validateRequest(identifierParametersSchema, 'params'), controller.getProduct);\nsrc/routes/product-routes.js:14:   router.post('/', validateRequest(productCreationSchema), controller.createProduct);\nsrc/routes/product-routes.js:15:   router.patch('/:identifier', validateRequest(identifierParametersSchema, 'params'),\nsrc/routes/product-routes.js:16:     validateRequest(productUpdateSchema), controller.updateProduct);\nsrc/routes/product-routes.js:17:   router.post('/:identifier/stock-adjustments', validateRequest(identifierParametersSchema, 'params'),\nsrc/routes/product-routes.js:18:     validateRequest(stockAdjustmentSchema), controller.adjustStock);\nsrc/routes/product-routes.js:19:   router.delete('/:identifier', validateRequest(identifierParametersSchema, 'params'),\nsrc/routes/product-routes.js:20:     validateRequest(versionSchema), controller.archiveProduct);\nResults limited to 50 matching lines; more matches exist."
+        }
+      },
+      {
+        "name": "read_file",
+        "arguments": {
+          "relative_path": "src/middleware/validate-request.js",
+          "start_line": 1,
+          "end_line": 200
+        },
+        "output": {
+          "result": "1: import { ApplicationError } from '../errors/application-error.js';\n2: \n3: export function validateRequest(schema, source = 'body') {\n4:   return function validateSelectedRequestPart(request, response, next) {\n5:     const result = schema.safeParse(request[source]);\n6:     if (!result.success) {\n7:       throw new ApplicationError(400, 'VALIDATION_FAILED', 'Request validation failed',\n8:         result.error.issues.map(issue => ({ source, field: issue.path.join('.'), message: issue.message })));\n9:     }\n10:     // Express 5 query is a getter; validated/coerced input has its own namespace.\n11:     request.validated ??= {};\n12:     request.validated[source] = result.data;\n13:     next();\n14:   };\n15: }"
+        }
+      },
+      {
+        "name": "read_file",
+        "arguments": {
+          "relative_path": "src/middleware/error-handler.js",
+          "start_line": 1,
+          "end_line": 200
+        },
+        "output": {
+          "result": "1: import { ApplicationError } from '../errors/application-error.js';\n2: \n3: export function handleRouteNotFound(request, response, next) {\n4:   next(new ApplicationError(404, 'ROUTE_NOT_FOUND', 'Route not found'));\n5: }\n6: \n7: export function createErrorHandler(logger) {\n8:   // All four arguments are required for Express to recognize error middleware.\n9:   return function handleApplicationError(error, request, response, next) {\n10:     if (response.headersSent) return next(error);\n11:     let applicationError = error;\n12:     if (error.type === 'entity.parse.failed') {\n13:       applicationError = new ApplicationError(400, 'INVALID_JSON', 'Request body contains invalid JSON');\n14:     } else if (error.type === 'entity.too.large') {\n15:       applicationError = new ApplicationError(413, 'BODY_TOO_LARGE', 'Request body exceeds the size limit');\n16:     } else if (error.status === 415) {\n17:       applicationError = new ApplicationError(415, 'UNSUPPORTED_ENCODING', 'Request body encoding is unsupported');\n18:     } else if (error instanceof URIError) {\n19:       applicationError = new ApplicationError(400, 'INVALID_URL', 'URL contains invalid encoding');\n20:     }\n21:     if (!(applicationError instanceof ApplicationError)) {\n22:       // Avoid leaking request contents, credentials or internal exception messages.\n23:       logger.error({ event: 'http.unexpected_error', requestId: request.requestId, errorType: error.name });\n24:       applicationError = new ApplicationError(500, 'INTERNAL_ERROR', 'An unexpected error occurred');\n25:     }\n26:     if (applicationError.statusCode === 401) response.set('WWW-Authenticate', 'Bearer');\n27:     response.status(applicationError.statusCode).json({\n28:       error: {\n29:         code: applicationError.code, message: applicationError.message,\n30:         ...(applicationError.details ? { details: applicationError.details } : {}),\n31:       },\n32:       requestId: request.requestId,\n33:     });\n34:   };\n35: }"
+        }
+      },
+      {
+        "name": "read_file",
+        "arguments": {
+          "relative_path": "src/server.js",
+          "start_line": 1,
+          "end_line": 300
+        },
+        "output": {
+          "result": "1: import { createApplication } from './app.js';\n2: import { readConfiguration } from './configuration/environment.js';\n3: import { createStructuredLogger } from './observability/structured-logger.js';\n4: \n5: const logger = createStructuredLogger();\n6: try {\n7:   const configuration = readConfiguration();\n8:   const application = await createApplication({ configuration, logger });\n9:   const server = application.listen(configuration.port, '0.0.0.0', () => {\n10:     logger.info({ event: 'server.started', port: configuration.port, environment: configuration.environment });\n11:   });\n12:   server.requestTimeout = 15000;\n13:   server.headersTimeout = 10000;\n14:   let shuttingDown = false;\n15: \n16:   function shutdown(signal) {\n17:     if (shuttingDown) return;\n18:     shuttingDown = true;\n19:     application.locals.context.lifecycle.ready = false;\n20:     logger.info({ event: 'server.shutdown_started', signal });\n21:     const shutdownDeadline = setTimeout(() => {\n22:       logger.error({ event: 'server.shutdown_timeout' });\n23:       server.closeAllConnections();\n24:       process.exit(1);\n25:     }, configuration.shutdownTimeoutMilliseconds);\n26:     shutdownDeadline.unref();\n27:     server.close(error => {\n28:       clearTimeout(shutdownDeadline);\n29:       logger.info({ event: 'server.shutdown_completed' });\n30:       process.exitCode = error ? 1 : 0;\n31:     });\n32:   }\n33: \n34:   process.once('SIGTERM', () => shutdown('SIGTERM'));\n35:   process.once('SIGINT', () => shutdown('SIGINT'));\n36:   server.on('error', error => {\n37:     logger.error({ event: 'server.listen_failed', code: error.code });\n38:     process.exitCode = 1;\n39:   });\n40: } catch (error) {\n41:   logger.error({ event: 'server.startup_failed', errorType: error.name, message: error.message });\n42:   process.exitCode = 1;\n43: }"
+        }
+      },
+      {
+        "name": "read_file",
+        "arguments": {
+          "relative_path": "src/app.js",
+          "start_line": 1,
+          "end_line": 200
+        },
+        "output": {
+          "result": "1: import express from 'express';\n2: import { readConfiguration } from './configuration/environment.js';\n3: import { createMemoryRepositories } from './repositories/memory-repositories.js';\n4: import { createStructuredLogger } from './observability/structured-logger.js';\n5: import { createAuditService } from './services/audit-service.js';\n6: import { createUserService } from './services/user-service.js';\n7: import { createAuthenticationService } from './services/authentication-service.js';\n8: import { createProductService } from './services/product-service.js';\n9: import { createOrderService } from './services/order-service.js';\n10: import { createAuthenticationController } from './controllers/authentication-controller.js';\n11: import { createUserController } from './controllers/user-controller.js';\n12: import { createProductController } from './controllers/product-controller.js';\n13: import { createOrderController } from './controllers/order-controller.js';\n14: import { createAdministrationController } from './controllers/administration-controller.js';\n15: import { createAuthenticationRouter } from './routes/authentication-routes.js';\n16: import { createUserRouter } from './routes/user-routes.js';\n17: import { createProductRouter } from './routes/product-routes.js';\n18: import { createOrderRouter } from './routes/order-routes.js';\n19: import { createAdministrationRouter } from './routes/administration-routes.js';\n20: import { createAuthenticateRequest } from './middleware/authenticate-request.js';\n21: import { createRateLimiter } from './middleware/rate-limit.js';\n22: import { createRequestContext } from './middleware/request-context.js';\n23: import { createHttpSecurity } from './middleware/http-security.js';\n24: import { createErrorHandler, handleRouteNotFound } from './middleware/error-handler.js';\n25: import { seedDemonstrationData } from './data/seed-demonstration-data.js';\n26: import { ApplicationError } from './errors/application-error.js';\n27: \n28: export async function createApplication({\n29:   configuration = readConfiguration(), logger = createStructuredLogger(), clock = Date.now,\n30: } = {}) {\n31:   const repositories = createMemoryRepositories(configuration);\n32:   const metrics = { startedAt: clock(), completedRequests: 0, serverErrors: 0 };\n33:   const lifecycle = { ready: false };\n34:   const auditService = createAuditService({ repositories, clock });\n35:   const userService = createUserService({ repositories, auditService, clock });\n36:   const authenticationService = await createAuthenticationService({ repositories, auditService, configuration, clock });\n37:   const productService = createProductService({ repositories, auditService, clock });\n38:   const orderService = createOrderService({ repositories, productService, auditService, configuration, clock });\n39:   const services = { auditService, userService, authenticationService, productService, orderService };\n40: \n41:   if (configuration.seedDemoData) await seedDemonstrationData(services);\n42:   const authenticateRequest = createAuthenticateRequest(authenticationService);\n43:   const authenticationRateLimiter = createRateLimiter({ maximumRequests: configuration.authenticationLimitPerMinute, clock });\n44:   const application = express();\n45:   application.disable('x-powered-by');\n46:   application.set('trust proxy', false);\n47:   application.set('query parser', 'simple');\n48:   application.locals.context = { repositories, services, lifecycle, metrics };\n49:   application.use(createRequestContext({ logger, metrics, clock }));\n50:   application.use(createHttpSecurity(configuration));\n51:   application.get('/health/live', (request, response) => response.json({ status: 'alive' }));\n52:   application.get('/health/ready', (request, response) => {\n53:     response.status(lifecycle.ready ? 200 : 503).json({ status: lifecycle.ready ? 'ready' : 'draining' });\n54:   });\n55:   application.use((request, response, next) => {\n56:     if (!lifecycle.ready) throw new ApplicationError(503, 'SERVER_DRAINING', 'Server is shutting down');\n57:     next();\n58:   });\n59:   application.use(createRateLimiter({ maximumRequests: configuration.requestLimitPerMinute, clock }));\n60:   application.use(express.json({ limit: configuration.bodySizeLimit }));\n61:   application.use('/api/v1/auth', createAuthenticationRouter({\n62:     controller: createAuthenticationController(services), authenticateRequest, authenticationRateLimiter,\n63:   }));\n64:   application.use('/api/v1/users', createUserRouter({\n65:     controller: createUserController(services), authenticateRequest, authenticationRateLimiter,\n66:   }));\n67:   application.use('/api/v1/products', createProductRouter({\n68:     controller: createProductController(services), authenticateRequest,\n69:   }));\n70:   application.use('/api/v1/orders', createOrderRouter({\n71:     controller: createOrderController(services), authenticateRequest,\n72:   }));\n73:   application.use('/api/v1/admin', createAdministrationRouter({\n74:     controller: createAdministrationController({ ...services, metrics, clock }), authenticateRequest,\n75:   }));\n76:   application.use(handleRouteNotFound);\n77:   application.use(createErrorHandler(logger));\n78:   lifecycle.ready = true;\n79:   return application;\n80: }"
+        }
+      },
+      {
+        "name": "read_file",
+        "arguments": {
+          "relative_path": "src/routes/product-routes.js",
+          "start_line": 1,
+          "end_line": 60
+        },
+        "output": {
+          "result": "1: import { Router } from 'express';\n2: import { validateRequest } from '../middleware/validate-request.js';\n3: import { requirePermission } from '../middleware/require-permission.js';\n4: import {\n5:   identifierParametersSchema, productQuerySchema, productCreationSchema,\n6:   productUpdateSchema, stockAdjustmentSchema, versionSchema,\n7: } from '../schemas/request-schemas.js';\n8: \n9: export function createProductRouter({ controller, authenticateRequest }) {\n10:   const router = Router();\n11:   router.get('/', validateRequest(productQuerySchema, 'query'), controller.listProducts);\n12:   router.get('/:identifier', validateRequest(identifierParametersSchema, 'params'), controller.getProduct);\n13:   router.use(authenticateRequest, requirePermission('products:manage'));\n14:   router.post('/', validateRequest(productCreationSchema), controller.createProduct);\n15:   router.patch('/:identifier', validateRequest(identifierParametersSchema, 'params'),\n16:     validateRequest(productUpdateSchema), controller.updateProduct);\n17:   router.post('/:identifier/stock-adjustments', validateRequest(identifierParametersSchema, 'params'),\n18:     validateRequest(stockAdjustmentSchema), controller.adjustStock);\n19:   router.delete('/:identifier', validateRequest(identifierParametersSchema, 'params'),\n20:     validateRequest(versionSchema), controller.archiveProduct);\n21:   return router;\n22: }"
+        }
+      },
+      {
+        "name": "read_file",
+        "arguments": {
+          "relative_path": "src/errors/application-error.js",
+          "start_line": 1,
+          "end_line": 200
+        },
+        "output": {
+          "result": "1: export class ApplicationError extends Error {\n2:   constructor(statusCode, code, message, details) {\n3:     super(message);\n4:     this.name = 'ApplicationError';\n5:     this.statusCode = statusCode;\n6:     this.code = code;\n7:     this.details = details;\n8:   }\n9: }"
+        }
+      }
+    ]
+  },
+  {
+    "question_number": "3",
+    "question": "Where is the Express application created, and where does it start listening?",
+    "answer": "- The Express application instance is created inside src/app.js as part of the createApplication function, where express() is called to build the app (see src/app.js:44).  \n  Evidence: src/app.js:44\n\n- The application is created by calling createApplication (imported from ./app.js) in src/server.js, and then the server starts listening on the configured port with application.listen(...): see src/server.js:8-11.  \n  Evidence: src/server.js:8-11\n\n- The listen call uses the port from the configuration and logs when the server has started (src/server.js:9-11).  \n  Evidence: src/server.js:9-11",
+    "trace": [
+      {
+        "name": "list_files",
+        "arguments": {},
+        "output": {
+          "result": [
+            ".dockerignore",
+            ".gitignore",
+            "Dockerfile",
+            "README.md",
+            "compose.yml",
+            "docs/",
+            "docs/api-reference.md",
+            "docs/architecture.md",
+            "package-lock.json",
+            "package.json",
+            "questions.md",
+            "scripts/",
+            "scripts/check-syntax.js",
+            "scripts/run-api-demo.js",
+            "src/",
+            "src/app.js",
+            "src/configuration/",
+            "src/configuration/environment.js",
+            "src/controllers/",
+            "src/controllers/administration-controller.js",
+            "src/controllers/authentication-controller.js",
+            "src/controllers/order-controller.js",
+            "src/controllers/product-controller.js",
+            "src/controllers/user-controller.js",
+            "src/data/",
+            "src/data/seed-demonstration-data.js",
+            "src/errors/",
+            "src/errors/application-error.js",
+            "src/middleware/",
+            "src/middleware/authenticate-request.js",
+            "src/middleware/error-handler.js",
+            "src/middleware/http-security.js",
+            "src/middleware/rate-limit.js",
+            "src/middleware/request-context.js",
+            "src/middleware/require-idempotency-key.js",
+            "src/middleware/require-permission.js",
+            "src/middleware/validate-request.js",
+            "src/observability/",
+            "src/observability/structured-logger.js",
+            "src/repositories/",
+            "src/repositories/memory-repositories.js",
+            "src/routes/",
+            "src/routes/administration-routes.js",
+            "src/routes/authentication-routes.js",
+            "src/routes/order-routes.js",
+            "src/routes/product-routes.js",
+            "src/routes/user-routes.js",
+            "src/schemas/",
+            "src/schemas/request-schemas.js",
+            "src/security/",
+            "src/security/password-hasher.js",
+            "src/security/role-permissions.js",
+            "src/security/session-token.js",
+            "src/server.js",
+            "src/services/",
+            "src/services/audit-service.js",
+            "src/services/authentication-service.js",
+            "src/services/order-service.js",
+            "src/services/pagination.js",
+            "src/services/product-service.js",
+            "src/services/user-service.js",
+            "test/",
+            "test/authentication.test.js",
+            "test/catalog-and-permissions.test.js",
+            "test/helpers/",
+            "test/helpers/test-application.js",
+            "test/http-infrastructure.test.js",
+            "test/orders.test.js",
+            "test/server-lifecycle.test.js"
+          ]
+        }
+      },
+      {
+        "name": "read_file",
+        "arguments": {
+          "relative_path": "src/server.js",
+          "start_line": 1,
+          "end_line": 400
+        },
+        "output": {
+          "result": "1: import { createApplication } from './app.js';\n2: import { readConfiguration } from './configuration/environment.js';\n3: import { createStructuredLogger } from './observability/structured-logger.js';\n4: \n5: const logger = createStructuredLogger();\n6: try {\n7:   const configuration = readConfiguration();\n8:   const application = await createApplication({ configuration, logger });\n9:   const server = application.listen(configuration.port, '0.0.0.0', () => {\n10:     logger.info({ event: 'server.started', port: configuration.port, environment: configuration.environment });\n11:   });\n12:   server.requestTimeout = 15000;\n13:   server.headersTimeout = 10000;\n14:   let shuttingDown = false;\n15: \n16:   function shutdown(signal) {\n17:     if (shuttingDown) return;\n18:     shuttingDown = true;\n19:     application.locals.context.lifecycle.ready = false;\n20:     logger.info({ event: 'server.shutdown_started', signal });\n21:     const shutdownDeadline = setTimeout(() => {\n22:       logger.error({ event: 'server.shutdown_timeout' });\n23:       server.closeAllConnections();\n24:       process.exit(1);\n25:     }, configuration.shutdownTimeoutMilliseconds);\n26:     shutdownDeadline.unref();\n27:     server.close(error => {\n28:       clearTimeout(shutdownDeadline);\n29:       logger.info({ event: 'server.shutdown_completed' });\n30:       process.exitCode = error ? 1 : 0;\n31:     });\n32:   }\n33: \n34:   process.once('SIGTERM', () => shutdown('SIGTERM'));\n35:   process.once('SIGINT', () => shutdown('SIGINT'));\n36:   server.on('error', error => {\n37:     logger.error({ event: 'server.listen_failed', code: error.code });\n38:     process.exitCode = 1;\n39:   });\n40: } catch (error) {\n41:   logger.error({ event: 'server.startup_failed', errorType: error.name, message: error.message });\n42:   process.exitCode = 1;\n43: }"
+        }
+      },
+      {
+        "name": "read_file",
+        "arguments": {
+          "relative_path": "src/app.js",
+          "start_line": 1,
+          "end_line": 400
+        },
+        "output": {
+          "result": "1: import express from 'express';\n2: import { readConfiguration } from './configuration/environment.js';\n3: import { createMemoryRepositories } from './repositories/memory-repositories.js';\n4: import { createStructuredLogger } from './observability/structured-logger.js';\n5: import { createAuditService } from './services/audit-service.js';\n6: import { createUserService } from './services/user-service.js';\n7: import { createAuthenticationService } from './services/authentication-service.js';\n8: import { createProductService } from './services/product-service.js';\n9: import { createOrderService } from './services/order-service.js';\n10: import { createAuthenticationController } from './controllers/authentication-controller.js';\n11: import { createUserController } from './controllers/user-controller.js';\n12: import { createProductController } from './controllers/product-controller.js';\n13: import { createOrderController } from './controllers/order-controller.js';\n14: import { createAdministrationController } from './controllers/administration-controller.js';\n15: import { createAuthenticationRouter } from './routes/authentication-routes.js';\n16: import { createUserRouter } from './routes/user-routes.js';\n17: import { createProductRouter } from './routes/product-routes.js';\n18: import { createOrderRouter } from './routes/order-routes.js';\n19: import { createAdministrationRouter } from './routes/administration-routes.js';\n20: import { createAuthenticateRequest } from './middleware/authenticate-request.js';\n21: import { createRateLimiter } from './middleware/rate-limit.js';\n22: import { createRequestContext } from './middleware/request-context.js';\n23: import { createHttpSecurity } from './middleware/http-security.js';\n24: import { createErrorHandler, handleRouteNotFound } from './middleware/error-handler.js';\n25: import { seedDemonstrationData } from './data/seed-demonstration-data.js';\n26: import { ApplicationError } from './errors/application-error.js';\n27: \n28: export async function createApplication({\n29:   configuration = readConfiguration(), logger = createStructuredLogger(), clock = Date.now,\n30: } = {}) {\n31:   const repositories = createMemoryRepositories(configuration);\n32:   const metrics = { startedAt: clock(), completedRequests: 0, serverErrors: 0 };\n33:   const lifecycle = { ready: false };\n34:   const auditService = createAuditService({ repositories, clock });\n35:   const userService = createUserService({ repositories, auditService, clock });\n36:   const authenticationService = await createAuthenticationService({ repositories, auditService, configuration, clock });\n37:   const productService = createProductService({ repositories, auditService, clock });\n38:   const orderService = createOrderService({ repositories, productService, auditService, configuration, clock });\n39:   const services = { auditService, userService, authenticationService, productService, orderService };\n40: \n41:   if (configuration.seedDemoData) await seedDemonstrationData(services);\n42:   const authenticateRequest = createAuthenticateRequest(authenticationService);\n43:   const authenticationRateLimiter = createRateLimiter({ maximumRequests: configuration.authenticationLimitPerMinute, clock });\n44:   const application = express();\n45:   application.disable('x-powered-by');\n46:   application.set('trust proxy', false);\n47:   application.set('query parser', 'simple');\n48:   application.locals.context = { repositories, services, lifecycle, metrics };\n49:   application.use(createRequestContext({ logger, metrics, clock }));\n50:   application.use(createHttpSecurity(configuration));\n51:   application.get('/health/live', (request, response) => response.json({ status: 'alive' }));\n52:   application.get('/health/ready', (request, response) => {\n53:     response.status(lifecycle.ready ? 200 : 503).json({ status: lifecycle.ready ? 'ready' : 'draining' });\n54:   });\n55:   application.use((request, response, next) => {\n56:     if (!lifecycle.ready) throw new ApplicationError(503, 'SERVER_DRAINING', 'Server is shutting down');\n57:     next();\n58:   });\n59:   application.use(createRateLimiter({ maximumRequests: configuration.requestLimitPerMinute, clock }));\n60:   application.use(express.json({ limit: configuration.bodySizeLimit }));\n61:   application.use('/api/v1/auth', createAuthenticationRouter({\n62:     controller: createAuthenticationController(services), authenticateRequest, authenticationRateLimiter,\n63:   }));\n64:   application.use('/api/v1/users', createUserRouter({\n65:     controller: createUserController(services), authenticateRequest, authenticationRateLimiter,\n66:   }));\n67:   application.use('/api/v1/products', createProductRouter({\n68:     controller: createProductController(services), authenticateRequest,\n69:   }));\n70:   application.use('/api/v1/orders', createOrderRouter({\n71:     controller: createOrderController(services), authenticateRequest,\n72:   }));\n73:   application.use('/api/v1/admin', createAdministrationRouter({\n74:     controller: createAdministrationController({ ...services, metrics, clock }), authenticateRequest,\n75:   }));\n76:   application.use(handleRouteNotFound);\n77:   application.use(createErrorHandler(logger));\n78:   lifecycle.ready = true;\n79:   return application;\n80: }"
+        }
+      }
+    ]
+  },
+  {
+    "question_number": "5",
+    "question": "Which endpoints are public and which require authentication?",
+    "answer": "- Public: user registration and login endpoints (no authentication required). See authentication routes: POST /api/v1/auth/register and POST /api/v1/auth/login. Evidence: src/routes/authentication-routes.js:7-8. Also note logout endpoints require auth (see next item) so registration/login are the public auth entry points. src/routes/authentication-routes.js:9-10 for logout endpoints.\n\n  - src/routes/authentication-routes.js:7-8\n  - src/routes/authentication-routes.js:9-10\n\n- Public: product listing and product retrieval endpoints (no authentication required). Evidence: GET /api/v1/products/ and GET /api/v1/products/:identifier are defined without an authentication middleware. src/routes/product-routes.js:11-12. \n\n  - src/routes/product-routes.js:11-12\n\n- Public: health check endpoints (alive/ready) are accessible without authentication. Evidence: src/app.js defines /health/live and /health/ready before any authentication middleware is applied. src/app.js:51-54.\n\n  - src/app.js:51-54\n\n- Requires authentication: logout actions require an authenticated user. Evidence: authentication routes include POST /logout and POST /logout-all guarded by authenticateRequest. src/routes/authentication-routes.js:9-10.\n\n  - src/routes/authentication-routes.js:9-10\n\n- Requires authentication: user-related endpoints are all behind authentication for the /api/v1/users router. Evidence: router.use(authenticateRequest); then GET /me, PATCH /me, POST /me/password, POST /me/deactivate. src/routes/user-routes.js:7-11.\n\n  - src/routes/user-routes.js:7-12\n\n- Requires authentication (and permissions): all product mutation routes and admin/order routes require authentication (and specific permissions where applicable). Evidence:\n  - Product mutations: router.use(authenticateRequest, requirePermission('products:manage')) before POST/PATCH/stock-adjustments/archive. src/routes/product-routes.js:13-20.\n  - Administration: router.use(authenticateRequest) before admin endpoints; and per-endpoint permissions for users/audit/metrics. src/routes/administration-routes.js:8-12.\n  - Orders: router.use(authenticateRequest); then per-route permission checks like orders:read-own, orders:create, etc. src/routes/order-routes.js:11-20.\n\n  - src/routes/product-routes.js:13-20\n  - src/routes/administration-routes.js:8-12\n  - src/routes/order-routes.js:11-20",
+    "trace": [
+      {
+        "name": "list_files",
+        "arguments": {},
+        "output": {
+          "result": [
+            ".dockerignore",
+            ".gitignore",
+            "Dockerfile",
+            "README.md",
+            "compose.yml",
+            "docs/",
+            "docs/api-reference.md",
+            "docs/architecture.md",
+            "package-lock.json",
+            "package.json",
+            "questions.md",
+            "scripts/",
+            "scripts/check-syntax.js",
+            "scripts/run-api-demo.js",
+            "src/",
+            "src/app.js",
+            "src/configuration/",
+            "src/configuration/environment.js",
+            "src/controllers/",
+            "src/controllers/administration-controller.js",
+            "src/controllers/authentication-controller.js",
+            "src/controllers/order-controller.js",
+            "src/controllers/product-controller.js",
+            "src/controllers/user-controller.js",
+            "src/data/",
+            "src/data/seed-demonstration-data.js",
+            "src/errors/",
+            "src/errors/application-error.js",
+            "src/middleware/",
+            "src/middleware/authenticate-request.js",
+            "src/middleware/error-handler.js",
+            "src/middleware/http-security.js",
+            "src/middleware/rate-limit.js",
+            "src/middleware/request-context.js",
+            "src/middleware/require-idempotency-key.js",
+            "src/middleware/require-permission.js",
+            "src/middleware/validate-request.js",
+            "src/observability/",
+            "src/observability/structured-logger.js",
+            "src/repositories/",
+            "src/repositories/memory-repositories.js",
+            "src/routes/",
+            "src/routes/administration-routes.js",
+            "src/routes/authentication-routes.js",
+            "src/routes/order-routes.js",
+            "src/routes/product-routes.js",
+            "src/routes/user-routes.js",
+            "src/schemas/",
+            "src/schemas/request-schemas.js",
+            "src/security/",
+            "src/security/password-hasher.js",
+            "src/security/role-permissions.js",
+            "src/security/session-token.js",
+            "src/server.js",
+            "src/services/",
+            "src/services/audit-service.js",
+            "src/services/authentication-service.js",
+            "src/services/order-service.js",
+            "src/services/pagination.js",
+            "src/services/product-service.js",
+            "src/services/user-service.js",
+            "test/",
+            "test/authentication.test.js",
+            "test/catalog-and-permissions.test.js",
+            "test/helpers/",
+            "test/helpers/test-application.js",
+            "test/http-infrastructure.test.js",
+            "test/orders.test.js",
+            "test/server-lifecycle.test.js"
+          ]
+        }
+      },
+      {
+        "name": "read_file",
+        "arguments": {
+          "relative_path": "src/routes/authentication-routes.js",
+          "start_line": 1,
+          "end_line": 400
+        },
+        "output": {
+          "result": "1: import { Router } from 'express';\n2: import { validateRequest } from '../middleware/validate-request.js';\n3: import { registrationSchema, loginSchema } from '../schemas/request-schemas.js';\n4: \n5: export function createAuthenticationRouter({ controller, authenticateRequest, authenticationRateLimiter }) {\n6:   const router = Router();\n7:   router.post('/register', authenticationRateLimiter, validateRequest(registrationSchema), controller.register);\n8:   router.post('/login', authenticationRateLimiter, validateRequest(loginSchema), controller.login);\n9:   router.post('/logout', authenticateRequest, controller.logout);\n10:   router.post('/logout-all', authenticateRequest, controller.logoutAll);\n11:   return router;\n12: }"
+        }
+      },
+      {
+        "name": "read_file",
+        "arguments": {
+          "relative_path": "src/routes/user-routes.js",
+          "start_line": 1,
+          "end_line": 400
+        },
+        "output": {
+          "result": "1: import { Router } from 'express';\n2: import { validateRequest } from '../middleware/validate-request.js';\n3: import { profileUpdateSchema, passwordChangeSchema, accountDeactivationSchema } from '../schemas/request-schemas.js';\n4: \n5: export function createUserRouter({ controller, authenticateRequest, authenticationRateLimiter }) {\n6:   const router = Router();\n7:   router.use(authenticateRequest);\n8:   router.get('/me', controller.getProfile);\n9:   router.patch('/me', validateRequest(profileUpdateSchema), controller.updateProfile);\n10:   router.post('/me/password', authenticationRateLimiter, validateRequest(passwordChangeSchema), controller.changePassword);\n11:   router.post('/me/deactivate', authenticationRateLimiter, validateRequest(accountDeactivationSchema), controller.deactivateAccount);\n12:   return router;\n13: }"
+        }
+      },
+      {
+        "name": "read_file",
+        "arguments": {
+          "relative_path": "src/routes/product-routes.js",
+          "start_line": 1,
+          "end_line": 400
+        },
+        "output": {
+          "result": "1: import { Router } from 'express';\n2: import { validateRequest } from '../middleware/validate-request.js';\n3: import { requirePermission } from '../middleware/require-permission.js';\n4: import {\n5:   identifierParametersSchema, productQuerySchema, productCreationSchema,\n6:   productUpdateSchema, stockAdjustmentSchema, versionSchema,\n7: } from '../schemas/request-schemas.js';\n8: \n9: export function createProductRouter({ controller, authenticateRequest }) {\n10:   const router = Router();\n11:   router.get('/', validateRequest(productQuerySchema, 'query'), controller.listProducts);\n12:   router.get('/:identifier', validateRequest(identifierParametersSchema, 'params'), controller.getProduct);\n13:   router.use(authenticateRequest, requirePermission('products:manage'));\n14:   router.post('/', validateRequest(productCreationSchema), controller.createProduct);\n15:   router.patch('/:identifier', validateRequest(identifierParametersSchema, 'params'),\n16:     validateRequest(productUpdateSchema), controller.updateProduct);\n17:   router.post('/:identifier/stock-adjustments', validateRequest(identifierParametersSchema, 'params'),\n18:     validateRequest(stockAdjustmentSchema), controller.adjustStock);\n19:   router.delete('/:identifier', validateRequest(identifierParametersSchema, 'params'),\n20:     validateRequest(versionSchema), controller.archiveProduct);\n21:   return router;\n22: }"
+        }
+      },
+      {
+        "name": "read_file",
+        "arguments": {
+          "relative_path": "src/routes/order-routes.js",
+          "start_line": 1,
+          "end_line": 400
+        },
+        "output": {
+          "result": "1: import { Router } from 'express';\n2: import { validateRequest } from '../middleware/validate-request.js';\n3: import { requirePermission } from '../middleware/require-permission.js';\n4: import { requireIdempotencyKey } from '../middleware/require-idempotency-key.js';\n5: import {\n6:   identifierParametersSchema, orderCreationSchema, orderQuerySchema, orderStatusSchema,\n7: } from '../schemas/request-schemas.js';\n8: \n9: export function createOrderRouter({ controller, authenticateRequest }) {\n10:   const router = Router();\n11:   router.use(authenticateRequest);\n12:   router.get('/', requirePermission('orders:read-own'), validateRequest(orderQuerySchema, 'query'), controller.listOrders);\n13:   router.post('/', requirePermission('orders:create'), requireIdempotencyKey,\n14:     validateRequest(orderCreationSchema), controller.createOrder);\n15:   router.get('/:identifier', requirePermission('orders:read-own'),\n16:     validateRequest(identifierParametersSchema, 'params'), controller.getOrder);\n17:   router.post('/:identifier/cancel', requirePermission('orders:cancel-own'),\n18:     validateRequest(identifierParametersSchema, 'params'), controller.cancelOrder);\n19:   router.patch('/:identifier/status', requirePermission('orders:manage'),\n20:     validateRequest(identifierParametersSchema, 'params'), validateRequest(orderStatusSchema), controller.updateOrderStatus);\n21:   return router;\n22: }"
+        }
+      },
+      {
+        "name": "read_file",
+        "arguments": {
+          "relative_path": "src/routes/administration-routes.js",
+          "start_line": 1,
+          "end_line": 400
+        },
+        "output": {
+          "result": "1: import { Router } from 'express';\n2: import { validateRequest } from '../middleware/validate-request.js';\n3: import { requirePermission } from '../middleware/require-permission.js';\n4: import { paginationSchema } from '../schemas/request-schemas.js';\n5: \n6: export function createAdministrationRouter({ controller, authenticateRequest }) {\n7:   const router = Router();\n8:   router.use(authenticateRequest);\n9:   router.get('/users', requirePermission('users:read-all'), validateRequest(paginationSchema, 'query'), controller.listUsers);\n10:   router.get('/audit-events', requirePermission('audit:read'), validateRequest(paginationSchema, 'query'), controller.listAuditEvents);\n11:   router.get('/metrics', requirePermission('audit:read'), controller.getMetrics);\n12:   return router;\n13: }"
+        }
+      },
+      {
+        "name": "read_file",
+        "arguments": {
+          "relative_path": "src/app.js",
+          "start_line": 1,
+          "end_line": 400
+        },
+        "output": {
+          "result": "1: import express from 'express';\n2: import { readConfiguration } from './configuration/environment.js';\n3: import { createMemoryRepositories } from './repositories/memory-repositories.js';\n4: import { createStructuredLogger } from './observability/structured-logger.js';\n5: import { createAuditService } from './services/audit-service.js';\n6: import { createUserService } from './services/user-service.js';\n7: import { createAuthenticationService } from './services/authentication-service.js';\n8: import { createProductService } from './services/product-service.js';\n9: import { createOrderService } from './services/order-service.js';\n10: import { createAuthenticationController } from './controllers/authentication-controller.js';\n11: import { createUserController } from './controllers/user-controller.js';\n12: import { createProductController } from './controllers/product-controller.js';\n13: import { createOrderController } from './controllers/order-controller.js';\n14: import { createAdministrationController } from './controllers/administration-controller.js';\n15: import { createAuthenticationRouter } from './routes/authentication-routes.js';\n16: import { createUserRouter } from './routes/user-routes.js';\n17: import { createProductRouter } from './routes/product-routes.js';\n18: import { createOrderRouter } from './routes/order-routes.js';\n19: import { createAdministrationRouter } from './routes/administration-routes.js';\n20: import { createAuthenticateRequest } from './middleware/authenticate-request.js';\n21: import { createRateLimiter } from './middleware/rate-limit.js';\n22: import { createRequestContext } from './middleware/request-context.js';\n23: import { createHttpSecurity } from './middleware/http-security.js';\n24: import { createErrorHandler, handleRouteNotFound } from './middleware/error-handler.js';\n25: import { seedDemonstrationData } from './data/seed-demonstration-data.js';\n26: import { ApplicationError } from './errors/application-error.js';\n27: \n28: export async function createApplication({\n29:   configuration = readConfiguration(), logger = createStructuredLogger(), clock = Date.now,\n30: } = {}) {\n31:   const repositories = createMemoryRepositories(configuration);\n32:   const metrics = { startedAt: clock(), completedRequests: 0, serverErrors: 0 };\n33:   const lifecycle = { ready: false };\n34:   const auditService = createAuditService({ repositories, clock });\n35:   const userService = createUserService({ repositories, auditService, clock });\n36:   const authenticationService = await createAuthenticationService({ repositories, auditService, configuration, clock });\n37:   const productService = createProductService({ repositories, auditService, clock });\n38:   const orderService = createOrderService({ repositories, productService, auditService, configuration, clock });\n39:   const services = { auditService, userService, authenticationService, productService, orderService };\n40: \n41:   if (configuration.seedDemoData) await seedDemonstrationData(services);\n42:   const authenticateRequest = createAuthenticateRequest(authenticationService);\n43:   const authenticationRateLimiter = createRateLimiter({ maximumRequests: configuration.authenticationLimitPerMinute, clock });\n44:   const application = express();\n45:   application.disable('x-powered-by');\n46:   application.set('trust proxy', false);\n47:   application.set('query parser', 'simple');\n48:   application.locals.context = { repositories, services, lifecycle, metrics };\n49:   application.use(createRequestContext({ logger, metrics, clock }));\n50:   application.use(createHttpSecurity(configuration));\n51:   application.get('/health/live', (request, response) => response.json({ status: 'alive' }));\n52:   application.get('/health/ready', (request, response) => {\n53:     response.status(lifecycle.ready ? 200 : 503).json({ status: lifecycle.ready ? 'ready' : 'draining' });\n54:   });\n55:   application.use((request, response, next) => {\n56:     if (!lifecycle.ready) throw new ApplicationError(503, 'SERVER_DRAINING', 'Server is shutting down');\n57:     next();\n58:   });\n59:   application.use(createRateLimiter({ maximumRequests: configuration.requestLimitPerMinute, clock }));\n60:   application.use(express.json({ limit: configuration.bodySizeLimit }));\n61:   application.use('/api/v1/auth', createAuthenticationRouter({\n62:     controller: createAuthenticationController(services), authenticateRequest, authenticationRateLimiter,\n63:   }));\n64:   application.use('/api/v1/users', createUserRouter({\n65:     controller: createUserController(services), authenticateRequest, authenticationRateLimiter,\n66:   }));\n67:   application.use('/api/v1/products', createProductRouter({\n68:     controller: createProductController(services), authenticateRequest,\n69:   }));\n70:   application.use('/api/v1/orders', createOrderRouter({\n71:     controller: createOrderController(services), authenticateRequest,\n72:   }));\n73:   application.use('/api/v1/admin', createAdministrationRouter({\n74:     controller: createAdministrationController({ ...services, metrics, clock }), authenticateRequest,\n75:   }));\n76:   application.use(handleRouteNotFound);\n77:   application.use(createErrorHandler(logger));\n78:   lifecycle.ready = true;\n79:   return application;\n80: }"
+        }
+      }
+    ]
+  },
+  {
+    "question_number": "49",
+    "question": "Which database tables or migrations store orders?",
+    "answer": "- There are no database tables or migrations for orders in this codebase\u2014the storage is in-memory. See the memory-backed repositories where orders are defined as a Map: src/repositories/memory-repositories.js:8. The orders repository is exposed as repositories.orders: src/repositories/memory-repositories.js:33.\n- When an order is created, the service saves it to the in-memory orders store: src/services/order-service.js:101 (repositories.orders.save(order)).",
+    "trace": [
+      {
+        "name": "list_files",
+        "arguments": {},
+        "output": {
+          "result": [
+            ".dockerignore",
+            ".gitignore",
+            "Dockerfile",
+            "README.md",
+            "compose.yml",
+            "docs/",
+            "docs/api-reference.md",
+            "docs/architecture.md",
+            "package-lock.json",
+            "package.json",
+            "questions.md",
+            "scripts/",
+            "scripts/check-syntax.js",
+            "scripts/run-api-demo.js",
+            "src/",
+            "src/app.js",
+            "src/configuration/",
+            "src/configuration/environment.js",
+            "src/controllers/",
+            "src/controllers/administration-controller.js",
+            "src/controllers/authentication-controller.js",
+            "src/controllers/order-controller.js",
+            "src/controllers/product-controller.js",
+            "src/controllers/user-controller.js",
+            "src/data/",
+            "src/data/seed-demonstration-data.js",
+            "src/errors/",
+            "src/errors/application-error.js",
+            "src/middleware/",
+            "src/middleware/authenticate-request.js",
+            "src/middleware/error-handler.js",
+            "src/middleware/http-security.js",
+            "src/middleware/rate-limit.js",
+            "src/middleware/request-context.js",
+            "src/middleware/require-idempotency-key.js",
+            "src/middleware/require-permission.js",
+            "src/middleware/validate-request.js",
+            "src/observability/",
+            "src/observability/structured-logger.js",
+            "src/repositories/",
+            "src/repositories/memory-repositories.js",
+            "src/routes/",
+            "src/routes/administration-routes.js",
+            "src/routes/authentication-routes.js",
+            "src/routes/order-routes.js",
+            "src/routes/product-routes.js",
+            "src/routes/user-routes.js",
+            "src/schemas/",
+            "src/schemas/request-schemas.js",
+            "src/security/",
+            "src/security/password-hasher.js",
+            "src/security/role-permissions.js",
+            "src/security/session-token.js",
+            "src/server.js",
+            "src/services/",
+            "src/services/audit-service.js",
+            "src/services/authentication-service.js",
+            "src/services/order-service.js",
+            "src/services/pagination.js",
+            "src/services/product-service.js",
+            "src/services/user-service.js",
+            "test/",
+            "test/authentication.test.js",
+            "test/catalog-and-permissions.test.js",
+            "test/helpers/",
+            "test/helpers/test-application.js",
+            "test/http-infrastructure.test.js",
+            "test/orders.test.js",
+            "test/server-lifecycle.test.js"
+          ]
+        }
+      },
+      {
+        "name": "search_code",
+        "arguments": {
+          "query": "order",
+          "max_results": 50
+        },
+        "output": {
+          "result": "README.md:3: A modular Express order-management API prepared as the repository your future\nREADME.md:8: all accounts, sessions, products, orders and audit events reset on restart.\nREADME.md:34: The demo logs in, lists products, creates an order, retries it with the same\nREADME.md:36: the cancelled order and audit history remain available for investigation.\nREADME.md:83:   app.js                          Composition root and middleware order\nREADME.md:114: readiness gate; see the actual order in `src/app.js`.\ndocs/api-reference.md:46: | GET | /api/v1/orders | Authenticated | Own orders; admins see all |\ndocs/api-reference.md:47: | POST | /api/v1/orders | Authenticated | Place order with idempotency key |\ndocs/api-reference.md:48: | GET | /api/v1/orders/:identifier | Owner or administrator | Retrieve order |\ndocs/api-reference.md:49: | POST | /api/v1/orders/:identifier/cancel | Owner or administrator | Cancel eligible order |\ndocs/api-reference.md:50: | PATCH | /api/v1/orders/:identifier/status | Administrator | Change order status |\ndocs/api-reference.md:95: and blocks future login. Existing orders and audit records remain.\ndocs/api-reference.md:141: Archived products disappear from public reads and cannot be ordered.\ndocs/api-reference.md:142: Records remain so historical orders can still restore reserved inventory.\ndocs/api-reference.md:158: Names and unit prices are copied into the order; catalog changes do not rewrite\ndocs/api-reference.md:159: existing orders. Every inventory line is checked before stock is deducted.\ndocs/api-reference.md:164: - Same key and same items: original 201 body and order ID are returned.\ndocs/api-reference.md:166: - Item order is ignored when comparing request contents.\ndocs/api-reference.md:169: - Replays return the original snapshot even if the order was later cancelled;\ndocs/api-reference.md:170:   GET the order for its current state.\ndocs/api-reference.md:172: After expiry, reusing a key can create a new order.\ndocs/api-reference.md:173: A full idempotency store rejects new orders with 503 before modifying inventory.\ndocs/api-reference.md:186: must correct stock first. No product or order is partially updated.\ndocs/architecture.md:10: Routes declare middleware order. Controllers translate HTTP inputs and outputs.\ndocs/architecture.md:45: Money uses integer cents, and schema bounds keep computed order totals within\ndocs/architecture.md:49: Only then does it save inventory changes, the order and the idempotency result.\ndocs/architecture.md:54: An invalid transition or capacity conflict leaves the entire order unchanged.\ndocs/architecture.md:56: Archiving preserves records needed by existing orders.\ndocs/architecture.md:102: - Users, products, orders and active sessions have no durable retention strategy.\nquestions.md:10: 2. Trace POST /api/v1/orders from its route to inventory mutation and response.\nquestions.md:12: 4. What determines middleware execution order?\nquestions.md:27: 16. What happens to existing orders when a customer deactivates their account?\nquestions.md:32: 18. Can one customer view or cancel another customer's order?\nquestions.md:35: 21. Does placing an order change the product version? Why does that matter?\nquestions.md:44: 27. Why does changing a product's price not change an existing order total?\nquestions.md:45: 28. What happens if an order request is retried with the same idempotency key?\nquestions.md:47: 30. After an order is cancelled, does a replay return the original or current order status?\nquestions.md:49: 32. Which order status transitions are legal, and who can trigger them?\nquestions.md:51: 34. Can an order containing an archived product still be cancelled?\nquestions.md:73: 49. Which database tables or migrations store orders?\nscripts/run-api-demo.js:33:   const orderRequest = {\nscripts/run-api-demo.js:38:   const created = await request('/api/v1/orders', orderRequest);\nscripts/run-api-demo.js:39:   const replayed = await request('/api/v1/orders', orderRequest);\nscripts/run-api-demo.js:40:   if (replayed.data.id !== created.data.id) throw new Error('Duplicate request created a second order');\nscripts/run-api-demo.js:41:   console.log('Created order ' + created.data.id + '; duplicate request returned the same order.');\nscripts/run-api-demo.js:42:   const cancelled = await request('/api/v1/orders/' + created.data.id + '/cancel', { method: 'POST', token: accessToken });\nsrc/app.js:9: import { createOrderService } from './services/order-service.js';\nsrc/app.js:13: import { createOrderController } from './controllers/order-controller.js';\nsrc/app.js:18: import { createOrderRouter } from './routes/order-routes.js';\nsrc/app.js:38:   const orderService = createOrderService({ repositories, productService, auditService, configuration, clock });\nResults limited to 50 matching lines; more matches exist."
+        }
+      },
+      {
+        "name": "read_file",
+        "arguments": {
+          "relative_path": "questions.md",
+          "start_line": 1,
+          "end_line": 200
+        },
+        "output": {
+          "result": "1: # Investigation questions\n2: \n3: Ask the navigator to cite repository paths, function names and current line\n4: numbers. Require it to distinguish what the code proves from what it assumes.\n5: Do not provide the evaluator guide as part of the initial investigation prompt.\n6: \n7: ## Start here\n8: \n9: 1. Find where request validation happens and explain how invalid requests are rejected.\n10: 2. Trace POST /api/v1/orders from its route to inventory mutation and response.\n11: 3. Where is the Express application created, and where does it start listening?\n12: 4. What determines middleware execution order?\n13: 5. Which endpoints are public and which require authentication?\n14: \n15: ## Authentication and account safety\n16: \n17: 6. How are passwords hashed, and why aren't tokens hashed the same way?\n18: 7. Where does a bearer token become an authenticated user?\n19: 8. What happens when a session expires?\n20: 9. Explain the difference between logout and logout-all.\n21: 10. How does a password change invalidate old sessions?\n22: 11. Can registration create an administrator? Cite both the schema and service.\n23: 12. What prevents concurrent registrations from creating duplicate emails?\n24: 13. What prevents concurrent password changes from overwriting each other?\n25: 14. How are password hashes excluded from API responses?\n26: 15. How does login handle nonexistent and inactive accounts?\n27: 16. What happens to existing orders when a customer deactivates their account?\n28: \n29: ## Permissions and catalog\n30: \n31: 17. Where are administrator permissions defined and enforced?\n32: 18. Can one customer view or cancel another customer's order?\n33: 19. How do product filtering, sorting and pagination work?\n34: 20. What prevents a stale product update from overwriting a newer change?\n35: 21. Does placing an order change the product version? Why does that matter?\n36: 22. What is the difference between archiving and physically deleting a product?\n37: 23. Where are stock adjustments validated and audited?\n38: \n39: ## Orders and failure cases\n40: \n41: 24. If the second requested product has insufficient stock, is the first product's stock changed?\n42: 25. How are duplicate product lines rejected?\n43: 26. Can two simultaneous requests buy the final unit?\n44: 27. Why does changing a product's price not change an existing order total?\n45: 28. What happens if an order request is retried with the same idempotency key?\n46: 29. What happens if that key is reused with different items or by another customer?\n47: 30. After an order is cancelled, does a replay return the original or current order status?\n48: 31. What changes after the idempotency record expires?\n49: 32. Which order status transitions are legal, and who can trigger them?\n50: 33. Can repeated cancellation restore inventory twice?\n51: 34. Can an order containing an archived product still be cancelled?\n52: 35. When can inventory capacity prevent cancellation, and is that failure atomic?\n53: \n54: ## Infrastructure and operational behavior\n55: \n56: 36. Where are malformed JSON and oversized bodies translated into API errors?\n57: 37. Which error details are hidden from clients?\n58: 38. How can a response be correlated with a log and audit event?\n59: 39. Which fields are deliberately excluded from request logs?\n60: 40. What are the two rate limits, and can a forwarded IP header bypass them?\n61: 41. Does CORS replace authentication? What does this implementation actually check?\n62: 42. What is the difference between liveness and readiness in this code?\n63: 43. What happens after SIGTERM, including the shutdown deadline?\n64: 44. How are environment values validated before startup?\n65: 45. How are demo accounts created, and why does production-mode seeding fail?\n66: 46. Which records are bounded, lazily expired, or retained indefinitely?\n67: 47. Why are these inventory operations safe from request interleaving in one process,\n68:     but not a replacement for a database transaction?\n69: 48. Which tests demonstrate ownership, concurrency, idempotency and session revocation?\n70: \n71: ## Questions where the answer should acknowledge absence\n72: \n73: 49. Which database tables or migrations store orders?\n74: 50. Where are payment requests sent?\n75: 51. How are password-reset emails delivered?\n76: 52. Where is the Codebase Navigator Agent implemented?\n77: \n78: A correct answer to an absent-feature question should say it is absent, cite\n79: relevant code and scope documentation, and avoid inventing an integration."
+        }
+      },
+      {
+        "name": "read_file",
+        "arguments": {
+          "relative_path": "src/repositories/memory-repositories.js",
+          "start_line": 1,
+          "end_line": 400
+        },
+        "output": {
+          "result": "1: import { randomUUID } from 'node:crypto';\n2: \n3: // Every application gets private storage. Copies prevent accidental mutations\n4: // outside explicit save operations. A database adapter could replace this layer.\n5: export function createMemoryRepositories({ maximumAuditEvents }) {\n6:   const users = new Map();\n7:   const products = new Map();\n8:   const orders = new Map();\n9:   const sessions = new Map();\n10:   const idempotencyRecords = new Map();\n11:   const auditEvents = [];\n12:   const copy = value => value === undefined ? undefined : structuredClone(value);\n13: \n14:   function createEntityRepository(records) {\n15:     return {\n16:       findById(identifier) { return copy(records.get(identifier)); },\n17:       findAll() { return [...records.values()].map(copy); },\n18:       save(entity) {\n19:         records.set(entity.id, copy(entity));\n20:         return copy(entity);\n21:       },\n22:     };\n23:   }\n24: \n25:   return {\n26:     users: {\n27:       ...createEntityRepository(users),\n28:       findByEmail(email) {\n29:         return copy([...users.values()].find(user => user.email === email));\n30:       },\n31:     },\n32:     products: createEntityRepository(products),\n33:     orders: createEntityRepository(orders),\n34:     sessions: {\n35:       findByTokenHash(tokenHash) { return copy(sessions.get(tokenHash)); },\n36:       save(session) { sessions.set(session.tokenHash, copy(session)); },\n37:       deleteByTokenHash(tokenHash) { sessions.delete(tokenHash); },\n38:       deleteByUserId(userId) {\n39:         for (const [tokenHash, session] of sessions) {\n40:           if (session.userId === userId) sessions.delete(tokenHash);\n41:         }\n42:       },\n43:       deleteExpired(now) {\n44:         for (const [tokenHash, session] of sessions) {\n45:           if (session.expiresAt <= now) sessions.delete(tokenHash);\n46:         }\n47:       },\n48:     },\n49:     idempotency: {\n50:       findByKey(key) { return copy(idempotencyRecords.get(key)); },\n51:       save(key, record) { idempotencyRecords.set(key, copy(record)); },\n52:       count() { return idempotencyRecords.size; },\n53:       deleteExpired(now) {\n54:         for (const [key, record] of idempotencyRecords) {\n55:           if (record.expiresAt <= now) idempotencyRecords.delete(key);\n56:         }\n57:       },\n58:     },\n59:     audit: {\n60:       append(event) {\n61:         auditEvents.push(copy({ id: randomUUID(), ...event }));\n62:         if (auditEvents.length > maximumAuditEvents) auditEvents.shift();\n63:       },\n64:       findAll() { return auditEvents.map(copy); },\n65:     },\n66:   };\n67: }"
+        }
+      },
+      {
+        "name": "read_file",
+        "arguments": {
+          "relative_path": "src/services/order-service.js",
+          "start_line": 1,
+          "end_line": 400
+        },
+        "output": {
+          "result": "1: import { createHash, randomUUID } from 'node:crypto';\n2: import { ApplicationError } from '../errors/application-error.js';\n3: import { hasPermission } from '../security/role-permissions.js';\n4: import { paginateRecords } from './pagination.js';\n5: \n6: export const allowedOrderTransitions = Object.freeze({\n7:   placed: Object.freeze(['confirmed', 'cancelled']),\n8:   confirmed: Object.freeze(['shipped', 'cancelled']),\n9:   shipped: Object.freeze(['delivered']),\n10:   delivered: Object.freeze([]),\n11:   cancelled: Object.freeze([]),\n12: });\n13: \n14: export function createOrderService({ repositories, productService, auditService, configuration, clock }) {\n15:   function requireAccessibleOrder(orderId, actor) {\n16:     const order = repositories.orders.findById(orderId);\n17:     if (!order) throw new ApplicationError(404, 'ORDER_NOT_FOUND', 'Order not found');\n18:     if (order.customerId !== actor.id && !hasPermission(actor, 'orders:read-all')) {\n19:       throw new ApplicationError(403, 'ORDER_ACCESS_DENIED', 'This order belongs to another customer');\n20:     }\n21:     return order;\n22:   }\n23: \n24:   function transitionOrder(order, nextStatus, actor, requestId) {\n25:     if (!allowedOrderTransitions[order.status].includes(nextStatus)) {\n26:       throw new ApplicationError(409, 'INVALID_ORDER_TRANSITION',\n27:         'Cannot transition an order from ' + order.status + ' to ' + nextStatus);\n28:     }\n29:     const timestamp = new Date(clock()).toISOString();\n30:     if (nextStatus === 'cancelled') {\n31:       // Archived products still exist so their reserved inventory can be restored.\n32:       const restoredProducts = order.items.map(item => {\n33:         const product = productService.requireProduct(item.productId, true);\n34:         product.stockQuantity += item.quantity;\n35:         if (product.stockQuantity > 1000000) {\n36:           throw new ApplicationError(409, 'STOCK_CAPACITY_EXCEEDED',\n37:             'Cancellation would exceed inventory capacity; adjust inventory first');\n38:         }\n39:         product.version += 1;\n40:         product.updatedAt = timestamp;\n41:         return product;\n42:       });\n43:       restoredProducts.forEach(product => repositories.products.save(product));\n44:     }\n45:     order.status = nextStatus;\n46:     order.updatedAt = timestamp;\n47:     order.statusHistory.push({ status: nextStatus, changedAt: timestamp, actorId: actor.id });\n48:     const savedOrder = repositories.orders.save(order);\n49:     auditService.recordEvent('order.status_changed', actor.id, order.id, requestId, { status: nextStatus });\n50:     return savedOrder;\n51:   }\n52: \n53:   return {\n54:     requireAccessibleOrder,\n55:     createOrder(actor, input, idempotencyKey, requestId) {\n56:       const now = clock();\n57:       repositories.idempotency.deleteExpired(now);\n58:       const scopedKey = actor.id + ':orders:create:' + idempotencyKey;\n59:       // Normalize item order so semantically identical retries have the same fingerprint.\n60:       const canonicalItems = [...input.items].sort((left, right) => left.productId.localeCompare(right.productId));\n61:       const fingerprint = createHash('sha256').update(JSON.stringify(canonicalItems)).digest('hex');\n62:       const previousRequest = repositories.idempotency.findByKey(scopedKey);\n63:       if (previousRequest) {\n64:         if (previousRequest.fingerprint !== fingerprint) {\n65:           throw new ApplicationError(409, 'IDEMPOTENCY_CONFLICT', 'This key was already used for different order items');\n66:         }\n67:         return { order: previousRequest.response, replayed: true };\n68:       }\n69:       if (repositories.idempotency.count() >= configuration.maximumIdempotencyRecords) {\n70:         throw new ApplicationError(503, 'IDEMPOTENCY_CAPACITY_REACHED', 'Order creation is temporarily unavailable');\n71:       }\n72: \n73:       // Validate every line BEFORE changing any inventory.\n74:       const inventoryReservations = input.items.map(item => {\n75:         const product = productService.requireProduct(item.productId);\n76:         if (product.stockQuantity < item.quantity) {\n77:           throw new ApplicationError(409, 'INSUFFICIENT_STOCK', 'Insufficient stock for ' + product.name);\n78:         }\n79:         return { product, quantity: item.quantity };\n80:       });\n81:       const orderItems = inventoryReservations.map(({ product, quantity }) => ({\n82:         productId: product.id, productName: product.name,\n83:         unitPriceCents: product.priceCents, quantity,\n84:         lineTotalCents: product.priceCents * quantity,\n85:       }));\n86:       const timestamp = new Date(now).toISOString();\n87:       const order = {\n88:         id: randomUUID(), customerId: actor.id, status: 'placed', items: orderItems,\n89:         totalCents: orderItems.reduce((total, item) => total + item.lineTotalCents, 0),\n90:         createdAt: timestamp, updatedAt: timestamp,\n91:         statusHistory: [{ status: 'placed', changedAt: timestamp, actorId: actor.id }],\n92:       };\n93:       // No await within this critical section: one Node process cannot interleave\n94:       // another request here. A real database needs a transaction and unique key.\n95:       for (const { product, quantity } of inventoryReservations) {\n96:         product.stockQuantity -= quantity;\n97:         product.version += 1;\n98:         product.updatedAt = timestamp;\n99:         repositories.products.save(product);\n100:       }\n101:       repositories.orders.save(order);\n102:       repositories.idempotency.save(scopedKey, {\n103:         fingerprint, response: order, expiresAt: now + configuration.idempotencyLifetimeMilliseconds,\n104:       });\n105:       auditService.recordEvent('order.created', actor.id, order.id, requestId, { totalCents: order.totalCents });\n106:       return { order, replayed: false };\n107:     },\n108:     listOrders(actor, query) {\n109:       const orders = repositories.orders.findAll().filter(order =>\n110:         (order.customerId === actor.id || hasPermission(actor, 'orders:read-all')) &&\n111:         (!query.status || order.status === query.status));\n112:       orders.sort((left, right) => right.createdAt.localeCompare(left.createdAt) || left.id.localeCompare(right.id));\n113:       return paginateRecords(orders, query);\n114:     },\n115:     cancelOrder(orderId, actor, requestId) {\n116:       const order = requireAccessibleOrder(orderId, actor);\n117:       return transitionOrder(order, 'cancelled', actor, requestId);\n118:     },\n119:     updateOrderStatus(orderId, nextStatus, actor, requestId) {\n120:       if (!hasPermission(actor, 'orders:manage')) {\n121:         throw new ApplicationError(403, 'PERMISSION_DENIED', 'Order management permission is required');\n122:       }\n123:       return transitionOrder(requireAccessibleOrder(orderId, actor), nextStatus, actor, requestId);\n124:     },\n125:   };\n126: }"
+        }
+      }
+    ]
+  }
+]
