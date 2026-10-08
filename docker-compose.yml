@@ -17,24 +17,17 @@ services:
 
     volumes:
       - "C:/Users/siva1/.ssh/chatgpt_ubuntu_dev.pub:/tmp/chatgpt_ubuntu_dev.pub:ro"
+      - "./setup-ubuntu-dev.sh:/usr/local/bin/setup-ubuntu-dev.sh:ro"
+      - "./install-codex.sh:/usr/local/bin/install-codex.sh:ro"
+      - "./start-ubuntu-dev.sh:/usr/local/bin/start-ubuntu-dev.sh:ro"
 
     command:
       - /bin/bash
       - -ec
       - |
-        if ! command -v sshd >/dev/null; then
-          apt-get update
-          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-            openssh-server git ca-certificates curl
-        fi
-        mkdir -p /root/.ssh /run/sshd
-        chmod 700 /root/.ssh
-        cp /tmp/chatgpt_ubuntu_dev.pub /root/.ssh/authorized_keys
-        chmod 600 /root/.ssh/authorized_keys
-        printf '%s\n' 'PermitRootLogin prohibit-password' 'PubkeyAuthentication yes' \
-          > /etc/ssh/sshd_config.d/99-dev.conf
-        ssh-keygen -A
-        exec /usr/sbin/sshd -D -e
+        bash /usr/local/bin/setup-ubuntu-dev.sh
+        bash /usr/local/bin/install-codex.sh
+        exec bash /usr/local/bin/start-ubuntu-dev.sh
 
     restart: unless-stopped
     init: true
